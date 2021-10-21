@@ -1,3 +1,3 @@
 .idea
-avn-price/secrets.py
+price/secrets.py
 *.pyc
