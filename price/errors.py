@@ -1,0 +1,2 @@
+class NoPriceForPlanError(RuntimeError):
+    pass
