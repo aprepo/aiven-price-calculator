@@ -1,5 +1,5 @@
 import secrets
-
+import json
 import requests
 
 
@@ -22,8 +22,13 @@ def _get(url):
 
 
 def get_projects(db):
-    response = _get("https://api.aiven.io/v1/project")
-    #print(json.dumps(response.json(), indent=4))
+    response = _get("https://api.aiven.io/v1/project").json()
+    for project in response['projects']:
+        print(json.dumps(project, indent=4))
+        print(f"Project: {project['project_name']}")
+        db.insert_project(
+            project_name=project['project_name']
+        )
 
 
 def get_prices(project, db):
@@ -32,7 +37,7 @@ def get_prices(project, db):
     for service_type in data["service_types"]:
         for plan in data["service_types"][service_type]['service_plans']:
             for region in plan['regions']:
-                print(f"PLAN: {plan['service_type']} : {plan['service_plan']} : {plan['regions'][region]['price_usd']} usd per hour")
+                #print(f"PLAN: {plan['service_type']} : {plan['service_plan']} : {plan['regions'][region]['price_usd']} usd per hour")
                 db.insert_plan(
                     service_type=plan['service_type'],
                     plan=plan['service_plan'],

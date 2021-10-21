@@ -12,4 +12,5 @@ aiven.get_prices("dev-sandbox", db)
 print("Data loaded")
 
 print(f"Projects: {db.get_project_count()}")
+print(f"Services: {db.get_service_count()}")
 print(f"Plans:    {db.get_plan_count()}")
