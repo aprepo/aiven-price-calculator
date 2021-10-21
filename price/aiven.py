@@ -1,11 +1,10 @@
 import secrets
 
 import requests
-import json
 
 
 def dump_settings():
-    print(f"API TOKEN: ***{secrets.API_TOKEN[:4]}")
+    print(f"API TOKEN: {secrets.API_TOKEN[:4]}***")
 
 
 def _get_headers():
@@ -15,13 +14,20 @@ def _get_headers():
     }
 
 
+def _get(url):
+    response = requests.get(url, headers=_get_headers())
+    if not response:
+        raise Exception(f"ERROR: {response.status_code} : {response.content}")
+    return response
+
+
 def get_projects(db):
-    response = requests.get("https://api.aiven.io/v1/project", headers=_get_headers())
+    response = _get("https://api.aiven.io/v1/project")
     #print(json.dumps(response.json(), indent=4))
 
 
 def get_prices(project, db):
-    response = requests.get(f"https://api.aiven.io/v1/project/{project}/service_types", headers=_get_headers())
+    response = _get(f"https://api.aiven.io/v1/project/{project}/service_types")
     data = response.json()
     for service_type in data["service_types"]:
         for plan in data["service_types"][service_type]['service_plans']:
