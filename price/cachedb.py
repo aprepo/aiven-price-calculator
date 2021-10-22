@@ -29,6 +29,33 @@ class CacheDB(object):
                 price REAL
             );
             """)
+        self.db.execute("""
+            CREATE TABLE IF NOT EXISTS invoices (
+                invoice_id TEXT,
+                billing_group TEXT,
+                period_start TEXT,
+                period_end TEXT,
+                state TEXT,
+                total_inc_vat REAL,
+                total_vat_zero REAL,
+                currency TEXT
+            )
+            """)
+        self.db.execute("""
+            CREATE TABLE IF NOT EXISTS line_items (
+                project_name TEXT,
+                service_name TEXT,
+                service_type TEXT,
+                plan TEXT,
+                could TEXT,
+                description TEXT,
+                total_usd REAL,
+                total_local REAL,
+                currency TEXT,
+                period_start TEXT,
+                period_end TEXT
+            )
+            """)
 
     def insert_plan(self, project_name, service_type, plan, region, price):
         self.db.execute(
@@ -66,6 +93,26 @@ class CacheDB(object):
             )
         )
 
+    def insert_invoice(self, invoice_id, billing_group, period_start, period_end, state, total_inc_vat, total_vat_zero,
+                       currency):
+        self.db.execute(
+            """
+            INSERT INTO invoices (invoice_id, billing_group, period_start, period_end, state, total_inc_vat, 
+                total_vat_zero, currency)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?) 
+            """,
+            (
+                invoice_id,
+                billing_group,
+                period_start,
+                period_end,
+                state,
+                total_inc_vat,
+                total_vat_zero,
+                currency
+            )
+        )
+
     def get_project_count(self):
         curr = self.db.cursor()
         curr.execute("SELECT count(*) FROM projects;")
@@ -81,6 +128,12 @@ class CacheDB(object):
     def get_service_count(self):
         curr = self.db.cursor()
         curr.execute("SELECT count(*) FROM services;")
+        count = curr.fetchone()
+        return count[0]
+
+    def get_invoice_count(self):
+        curr = self.db.cursor()
+        curr.execute("SELECT count(*) FROM invoices")
         count = curr.fetchone()
         return count[0]
 

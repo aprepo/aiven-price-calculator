@@ -75,3 +75,22 @@ def get_services(db, project):
             cloud=service['cloud_name'],
             price=price
         )
+
+
+def get_invoices(db, project):
+    response = _get(f"https://api.aiven.io/v1/project/{project}/invoice")
+    data = response.json()
+    for invoice in data['invoices']:
+        print(f"INVOICE: {invoice['invoice_number']}: {invoice['period_begin']}-{invoice['period_end']} " 
+              f"{invoice['total_inc_vat']} {invoice['currency']}")
+        #print(json.dumps(invoice, indent=4))
+        db.insert_invoice(
+            invoice_id=invoice['invoice_number'],
+            billing_group=invoice['billing_group_name'],
+            period_start=invoice['period_begin'],
+            period_end=invoice['period_end'],
+            state=invoice['state'],
+            total_inc_vat=invoice['total_inc_vat'],
+            total_vat_zero=invoice['total_vat_zero'],
+            currency=invoice['currency']
+        )
