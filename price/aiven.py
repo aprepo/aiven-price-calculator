@@ -11,6 +11,7 @@ def dump_settings():
 def _get_headers():
     return {
         'content-type': "application/json",
+        'User-Agent': 'aiven-price-calculator v0.1.0',
         'authorization': f"aivenv1 {secrets.API_TOKEN}"
     }
 
