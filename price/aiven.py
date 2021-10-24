@@ -22,11 +22,25 @@ def _get(url):
     return response
 
 
+def get_billing_groups(db):
+    response = _get("https://api.aiven.io/v1/billing-group")
+    data = response.json()
+    for group in data['billing_groups']:
+        db.insert_billing_group(
+            id=group['billing_group_id'],
+            name=group['billing_group_name'],
+            account_id=group['account_id'],
+            account_name=group['account_name'],
+            currency=group['billing_currency'],
+            payment_method=group['payment_method'],
+            estimated_balance_usd=group['estimated_balance_usd'],
+            estimated_balance_local=group['estimated_balance_local']
+        )
+
+
 def get_projects(db):
     response = _get("https://api.aiven.io/v1/project").json()
     for project in response['projects']:
-        #print(json.dumps(project, indent=4))
-        #print(f"Project: {project['project_name']}")
         db.insert_project(
             project_name=project['project_name']
         )
@@ -85,8 +99,9 @@ def get_invoices(db, project):
               f"{invoice['total_inc_vat']} {invoice['currency']}")
         #print(json.dumps(invoice, indent=4))
         db.insert_invoice(
-            invoice_id=invoice['invoice_number'],
             billing_group=invoice['billing_group_name'],
+            project_id=project,
+            invoice_id=invoice['invoice_number'],
             period_start=invoice['period_begin'],
             period_end=invoice['period_end'],
             state=invoice['state'],
@@ -94,3 +109,21 @@ def get_invoices(db, project):
             total_vat_zero=invoice['total_vat_zero'],
             currency=invoice['currency']
         )
+
+
+def get_invoice_line_items(db, billing_group_id, project, invoice_id):
+    db.insert_line_item(
+        billing_group_id,
+        invoice_id,
+        project=project,
+        service_name="",
+        service_type="",
+        plan="",
+        cloud="",
+        description="",
+        total_usd="",
+        total_local="",
+        currency="",
+        period_start="",
+        period_end=""
+    )

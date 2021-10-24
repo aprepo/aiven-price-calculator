@@ -1,5 +1,6 @@
 import aiven
 import cachedb
+from report import console
 
 print("Initiating cache...")
 db = cachedb.init()
@@ -7,20 +8,15 @@ db = cachedb.init()
 aiven.dump_settings()
 
 print("Loading data...")
+aiven.get_billing_groups(db)
 aiven.get_projects(db)
 for (project, ) in db.get_projects():
     print(f"Project : {project}...")
     aiven.get_prices(db=db, project=project)
     aiven.get_services(db=db, project=project)
     aiven.get_invoices(db=db, project=project)
+    for invoice in db.get_project_invoices(project_id=project):
+        aiven.get_invoice_line_items(db=db, project=project, billing_group_id="", invoice_id=invoice['invoice_id'])
 print("Data loaded")
 
-print(f"-------------------------------------------------------")
-print(f"Projects: {db.get_project_count()}")
-print(f"Services: {db.get_service_count()}")
-print(f"Plans:    {db.get_plan_count()}")
-print(f"Invoices: {db.get_invoice_count()}")
-print(f"-------------------------------------------------------")
-print(f"Total spend: ")
-for (project, hourly, monthly) in db.get_total_spend():
-    print(f"{project} : {hourly:.2f} per hour : {monthly:.2f} per month")
+console.print_summary(db)
