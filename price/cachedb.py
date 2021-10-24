@@ -1,19 +1,21 @@
 import sqlite3
 import errors
+import tables
 
 
 class CacheDB(object):
-    def __init__(self):
-        self.db = sqlite3.connect(':memory:')
-        self.db.execute("""
-            CREATE TABLE IF NOT EXISTS plans (
-                project_name TEXT,
-                service_type TEXT,
-                plan TEXT,
-                region TEXT,
-                price REAL 
-            );
-            """)
+    def __init__(self, path=":memory:"):
+        self.path = path
+        self.db = sqlite3.connect(self.path)
+        #self.db.execute("""
+        #    CREATE TABLE IF NOT EXISTS plans (
+        #        project_name TEXT,
+        #        service_type TEXT,
+        #        plan TEXT,
+        #        region TEXT,
+        #        price REAL
+        #    );
+        #    """)
         self.db.execute("""
             CREATE TABLE IF NOT EXISTS projects (
                 project_name TEXT PRIMARY KEY,
@@ -295,5 +297,5 @@ def _invoice_dict(invoice):
     }
 
 
-def init() -> CacheDB:
-    return CacheDB()
+def init(path) -> CacheDB:
+    return CacheDB(path=path)

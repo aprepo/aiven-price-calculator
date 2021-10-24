@@ -9,7 +9,7 @@ license = "MIT"
 python = "^3.9.1"
 requests = "^2.26.0"
 Jinja2 = "^3.0.2"
-piccolo = "^0.57.0"
+piccolo = {extras = ["sqlite"], version = "^0.57.0"}
 
 [tool.poetry.dev-dependencies]
 

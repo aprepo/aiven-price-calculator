@@ -1,5 +1,4 @@
 import secrets
-import json
 import requests
 import errors
 
@@ -56,7 +55,6 @@ def get_prices(db, project):
     for service_type in data["service_types"]:
         for plan in data["service_types"][service_type]['service_plans']:
             for region in plan['regions']:
-                #print(f"PLAN: {plan['service_type']} : {plan['service_plan']} : {plan['regions'][region]['price_usd']} usd per hour")
                 db.insert_plan(
                     project_name=project,
                     service_type=plan['service_type'],
@@ -64,7 +62,6 @@ def get_prices(db, project):
                     region=region,
                     price=plan['regions'][region]['price_usd']
                 )
-    #print(json.dumps(response.json(), indent=4))
 
 
 def get_services(db, project):
@@ -101,7 +98,6 @@ def get_invoices(db, project, billing_group_id):
     for invoice in data['invoices']:
         print(f"INVOICE: {invoice['invoice_number']}: {invoice['period_begin']}-{invoice['period_end']} " 
               f"{invoice['total_inc_vat']} {invoice['currency']}")
-        #print(json.dumps(invoice, indent=4))
         db.insert_invoice(
             billing_group_id=billing_group_id,
             billing_group_name=invoice['billing_group_name'],
