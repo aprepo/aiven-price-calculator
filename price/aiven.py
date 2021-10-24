@@ -18,6 +18,8 @@ def _get_headers():
 def _get(url):
     response = requests.get(url, headers=_get_headers())
     if not response:
+        if response.status_code == 404:
+            raise errors.HTTPNotFoundExcpetion(response)
         raise Exception(f"ERROR: {response.status_code} : {response.content}")
     return response
 
@@ -42,7 +44,8 @@ def get_projects(db):
     response = _get("https://api.aiven.io/v1/project").json()
     for project in response['projects']:
         db.insert_project(
-            project_name=project['project_name']
+            project_name=project['project_name'],
+            billing_group_id=project['billing_group_id']
         )
 
 
@@ -91,7 +94,7 @@ def get_services(db, project):
         )
 
 
-def get_invoices(db, project):
+def get_invoices(db, project, billing_group_id):
     response = _get(f"https://api.aiven.io/v1/project/{project}/invoice")
     data = response.json()
     for invoice in data['invoices']:
@@ -99,7 +102,8 @@ def get_invoices(db, project):
               f"{invoice['total_inc_vat']} {invoice['currency']}")
         #print(json.dumps(invoice, indent=4))
         db.insert_invoice(
-            billing_group=invoice['billing_group_name'],
+            billing_group_id=billing_group_id,
+            billing_group_name=invoice['billing_group_name'],
             project_id=project,
             invoice_id=invoice['invoice_number'],
             period_start=invoice['period_begin'],
@@ -112,18 +116,25 @@ def get_invoices(db, project):
 
 
 def get_invoice_line_items(db, billing_group_id, project, invoice_id):
-    db.insert_line_item(
-        billing_group_id,
-        invoice_id,
-        project=project,
-        service_name="",
-        service_type="",
-        plan="",
-        cloud="",
-        description="",
-        total_usd="",
-        total_local="",
-        currency="",
-        period_start="",
-        period_end=""
-    )
+    try:
+        response = _get(f"https://api.aiven.io/v1/billing-group/{billing_group_id}/invoice/{invoice_id}/lines")
+    except errors.HTTPNotFoundExcpetion:
+        print(f"No invoice lines found for {project}:{billing_group_id}:{invoice_id}")
+        return
+    data = response.json()
+    for line in data['lines']:
+        db.insert_line_item(
+            billing_group_id,
+            invoice_id,
+            project=project,
+            service_name=line.get('service_name', 'UNKNOWN'),
+            service_type=line.get('service_type', 'UNKNOWN'),
+            plan=line.get('service_plan', 'UNKNOWN'),
+            cloud=line.get('cloud_name', 'UNKNOWN'),
+            description=line['description'],
+            total_usd=line['line_total_usd'],
+            total_local=line['line_total_local'],
+            currency=line['local_currency'],
+            period_start=line['timestamp_begin'],
+            period_end=line['timestamp_end']
+        )

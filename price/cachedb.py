@@ -16,7 +16,8 @@ class CacheDB(object):
             """)
         self.db.execute("""
             CREATE TABLE IF NOT EXISTS projects (
-                project_name TEXT PRIMARY KEY
+                project_name TEXT PRIMARY KEY,
+                billing_group_id TEXT
             );
             """)
         self.db.execute("""
@@ -31,7 +32,8 @@ class CacheDB(object):
             """)
         self.db.execute("""
             CREATE TABLE IF NOT EXISTS invoices (
-                billing_group TEXT,
+                billing_group_id TEXT,
+                billing_group_name TEXT,
                 project_id TEXT,
                 invoice_id TEXT,
                 period_start TEXT,
@@ -84,11 +86,13 @@ class CacheDB(object):
             )
         )
 
-    def insert_project(self, project_name):
+    def insert_project(self, project_name, billing_group_id):
+        print(f"PROJECT: {project_name}: {billing_group_id}")
         self.db.execute(
-            """INSERT INTO projects (project_name) VALUES(?)""",
+            """INSERT INTO projects (project_name, billing_group_id) VALUES(?, ?)""",
             (
                 project_name,
+                billing_group_id
             )
         )
 
@@ -108,16 +112,17 @@ class CacheDB(object):
             )
         )
 
-    def insert_invoice(self, billing_group, project_id, invoice_id, period_start, period_end, state, total_inc_vat, total_vat_zero,
-                       currency):
+    def insert_invoice(self, billing_group_id, billing_group_name, project_id, invoice_id, period_start, period_end,
+                       state, total_inc_vat, total_vat_zero, currency):
         self.db.execute(
             """
-            INSERT INTO invoices (billing_group, project_id, invoice_id, period_start, period_end, state, total_inc_vat, 
+            INSERT INTO invoices (billing_group_id, billing_group_name, project_id, invoice_id, period_start, period_end, state, total_inc_vat, 
                 total_vat_zero, currency)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
             """,
             (
-                billing_group,
+                billing_group_id,
+                billing_group_name,
                 project_id,
                 invoice_id,
                 period_start,
@@ -227,11 +232,16 @@ class CacheDB(object):
     def get_projects(self):
         curr = self.db.cursor()
         try:
-            curr.execute("SELECT project_name FROM projects")
+            curr.execute("SELECT project_name, billing_group_id FROM projects")
             result = curr.fetchall()
         finally:
             curr.close()
         return result
+
+    def get_unknown_line_items(self):
+        curr = self.db.cursor()
+        curr.execute("SELECT count(*) FROM line_items WHERE service_name='UNKNOWN'")
+        return curr.fetchone()[0]
 
     def get_price_for_service(self, project_name, service_type, plan, region):
         curr = self.db.cursor()
@@ -271,17 +281,19 @@ class CacheDB(object):
 
 def _invoice_dict(invoice):
     return {
-        "billing_group": invoice[0],
-        "project_id": invoice[1],
-        "invoice_id": invoice[2],
-        "period_start": invoice[3],
-        "period_end": invoice[4],
-        "state": invoice[5],
-        "total_inc_vat": invoice[6],
-        "total_vat_zero": invoice[7],
-        "currency": invoice[8]
+        "billing_group_id": invoice[0],
+        "billing_group_name": invoice[1],
+        "project_id": invoice[2],
+        "invoice_id": invoice[3],
+        "period_start": invoice[4],
+        "period_end": invoice[5],
+        "state": invoice[6],
+        "total_inc_vat": invoice[7],
+        "total_vat_zero": invoice[8],
+        "currency": invoice[9]
 
     }
+
 
 def init() -> CacheDB:
     return CacheDB()
